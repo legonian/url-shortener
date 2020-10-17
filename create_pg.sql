@@ -29,18 +29,20 @@ CREATE TABLE IF NOT EXISTS short_urls (
   create_date timestamp not null default current_timestamp
 );
 
---function to add URL
-CREATE OR REPLACE FUNCTION add_url(IN f_url varchar(100), OUT s_url varchar(10), OUT f_url varchar(100)) AS $$
+--function to add short URL
+DROP FUNCTION IF EXISTS add_url(character varying);
+CREATE FUNCTION add_url(IN f_url varchar(100), OUT short_url varchar(10), OUT full_url varchar(100), OUT views_count int) AS $$
   INSERT INTO short_urls (full_url)
-  VALUES ('qwe')
-  RETURNING short_url, full_url;
+  VALUES (f_url)
+  RETURNING short_url, full_url, views_count;
 $$ LANGUAGE SQL;
 
---function to get full URL
-CREATE OR REPLACE FUNCTION get_full_url(IN s_url varchar(10), OUT url_str varchar(100), OUT url_views int) AS $$
+--function to read short URL
+DROP FUNCTION IF EXISTS get_full_url(character varying);
+CREATE FUNCTION get_full_url(IN s_url varchar(10), OUT short_url varchar(10), OUT full_url varchar(100), OUT views_count int) AS $$
   UPDATE short_urls SET views_count = views_count+1 WHERE short_url = s_url;
   
-  SELECT full_url, views_count FROM short_urls
+  SELECT short_url, full_url, views_count FROM short_urls
   WHERE short_url = s_url
 $$ LANGUAGE SQL;
 
