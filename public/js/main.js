@@ -20,8 +20,13 @@ async function sendToServer(urlText){
   })
 
   if (res.status === 200) {
-    // ans = await res.json()
-    console.log('res =', await res.json())
+    ans = await res.json()
+    
+    const protocol =  window.location.protocol
+    const hostname = window.location.hostname
+    const port = window.location.port
+    const url = `${protocol}//${hostname}:${port}/${ans.short_url}/info`
+    window.location.href = url
   } else {
     showError()
   }
