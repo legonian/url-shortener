@@ -15,6 +15,7 @@ import (
 var db *sql.DB
 var err error
 
+// Data type that will be sent to client
 type Data struct {
 	OK bool `json:"ok"`
 	ShortURL string `json:"short_url"`
@@ -22,6 +23,7 @@ type Data struct {
 	ViewsCount int `json:"views_count"`
 }
 
+// Initialize database
 func init() {
 	var err error
 	sql_url := os.Getenv("DATABASE_URL")
@@ -67,18 +69,18 @@ func indexRouter(c echo.Context) error {
 	return c.File("public/index.html")
 }
 
-// Info about short URL
+// Info Page about URL
 func infoRouter(c echo.Context) error {
 	return c.File("public/info.html")
 }
 
+// Send new url to database
 func submitRouter(c echo.Context) error {
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
 		return err
 	}
 	q := fmt.Sprintf("select * from add_url('%s')", m["url"])
-	log.Print(q)
 	res := get_query(q)
 	return c.JSON(http.StatusOK, res)
 }
@@ -88,8 +90,7 @@ func redirectByShortURL(c echo.Context) error {
 	short_url := c.Param("short_url")
 	q := fmt.Sprintf("select * from get_full_url('%s')", short_url)
 	res := get_query(q)
-	log.Print(res.FullURL)
-	return c.Redirect(http.StatusMovedPermanently, res.FullURL) // http.StatusMovedPermanently
+	return c.Redirect(http.StatusFound, res.FullURL) // StatusMovedPermanently
 }
 
 // Functions
@@ -112,7 +113,6 @@ func get_query(query string) Data{
 			url.OK = true
 			res = append(res, url)
 		}
-		
 	}
 	if err = rows.Err(); err != nil {
 		return Data{OK:false}
@@ -126,9 +126,7 @@ func apiRouter(c echo.Context) error {
 	if err := c.Bind(&m); err != nil {
 		return err
 	}
-	log.Print(m)
-	q := fmt.Sprintf("select * from get_full_url('%s')", m["url"])
+	q := fmt.Sprintf("select * from get_full_url('%s', 0)", m["url"])
 	res := get_query(q)
-	log.Print(res)
 	return c.JSON(http.StatusOK, res)
 }
