@@ -27,3 +27,9 @@ async function sendToServer(urlText){
 }
 
 submitButton.onclick = function () { sendToServer(userInput.value) }
+
+userInput.addEventListener("keyup", function (event){
+  if (event.key === 'Enter') {
+    submitButton.click()
+  }
+})
