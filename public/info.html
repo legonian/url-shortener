@@ -15,9 +15,34 @@
 <body class="bg-light">
   <div class="container">
     <div class="py-4 py-5 text-center">
-      <h2>URL shortener</h2>
-      <p class="lead">To simplify just type your link</p>
-      <p>Use this URL Shortener to create a shortened link making it easy to share.</p>
+      
+      <h2>URL Info</h2>
+      <p class="lead">
+        Here you can copy short link that redirect to previously defined URL.
+      </p>
+      <div class="card mx-auto" style="width: 28rem;">
+        <div class="card-body">
+          <h5 class="card-title">Copy Link</h5>
+          <div class="input-group mb-3 ">
+            <input id="url_text" type="text" class="form-control">
+            <div class="input-group-append">
+              <button id="copy_button" class="btn btn-success btn" type="button">Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <br>
+      
+      <p class="lead">
+        Also here is click counter to see how much short link was clicked.
+      </p>
+      <div class="card mx-auto" style="width: 20rem;">
+        <div class="card-body">
+          <h4>Total URL Clicks</h4>
+          <h1 id="number_of_clicks"></h1>
+        </div>
+      </div>
+
     </div>
   </div>
 
