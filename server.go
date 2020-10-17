@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"log"
+	"net/url"
 	"net/http"
 	"database/sql"
 	
@@ -23,6 +24,11 @@ type Data struct {
 	ViewsCount int `json:"views_count"`
 }
 
+// Data type that coming from client
+type Url struct {
+	Url string `json:"url"`
+}
+
 // Initialize database
 func init() {
 	var err error
@@ -38,6 +44,7 @@ func init() {
 	fmt.Println("You connected to your database.")
 }
 
+// Initialize and run labstack/echo server
 func main() {
 	port := os.Getenv("PORT")
 
@@ -76,11 +83,15 @@ func infoRouter(c echo.Context) error {
 
 // Send new url to database
 func submitRouter(c echo.Context) error {
-	m := echo.Map{}
-	if err := c.Bind(&m); err != nil {
+	var u Url
+	//m := echo.Map{}
+	if err := c.Bind(&u); err != nil { return err }
+	urlCode := string(u.Url)
+	_, err := url.ParseRequestURI(urlCode)
+	if err != nil {
 		return err
 	}
-	q := fmt.Sprintf("select * from add_url('%s')", m["url"])
+	q := fmt.Sprintf("select * from add_url('%s')", urlCode)
 	res := get_query(q)
 	return c.JSON(http.StatusOK, res)
 }
