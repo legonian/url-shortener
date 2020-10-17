@@ -1,1 +1,1 @@
-web: bin/url-shortener-server
+web: bin/url-shortener
