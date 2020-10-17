@@ -20,6 +20,7 @@ async function sendToServer(urlText){
   })
 
   if (res.status === 200) {
+    // ans = await res.json()
     console.log('res =', await res.json())
   } else {
     showError()
