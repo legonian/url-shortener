@@ -43,7 +43,7 @@ func main() {
 	e.GET("/:short_url/info", h.Info)
 
 	// Called from Index Page javascript
-	e.POST("/create", h.SetRedirect)
+	e.POST("/create", h.SetRedirectJson)
 	// Called from Info Page javascript
 	e.POST("/:short_url/json", h.InfoJson)
 
