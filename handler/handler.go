@@ -41,24 +41,29 @@ func (h *Handler) Info(c echo.Context) error {
 }
 
 // Send new url to database
-func (h *Handler) SetRedirect(c echo.Context) error {
+func (h *Handler) SetRedirectJson(c echo.Context) error {
 	var u Url
-	if err := c.Bind(&u); err != nil { return err }
+	if err := c.Bind(&u); err != nil {
+		return c.JSON(http.StatusBadRequest, &Data{OK: false})
+	}
 	urlCode := string(u.Url)
 	_, err := url.ParseRequestURI(urlCode)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, &Data{OK: false})
 	}
 	q := fmt.Sprintf("select * from add_url('%s')", urlCode)
-	res := get_query(h.DB, q)
-	return c.JSON(http.StatusOK, res)
+	res := getQuery(h.DB, q)
+	return c.JSON(http.StatusCreated, res)
 }
 
 // Redirect to full URL
 func (h *Handler) Redirect(c echo.Context) error {
 	short_url := c.Param("short_url")
 	q := fmt.Sprintf("select * from get_full_url('%s')", short_url)
-	res := get_query(h.DB, q)
+	res := getQuery(h.DB, q)
+	if !res.OK {
+		return c.String(http.StatusBadRequest, "Shortcut Not Found")
+	}
 	return c.Redirect(http.StatusFound, res.FullURL)
 }
 
@@ -69,12 +74,12 @@ func (h *Handler) InfoJson(c echo.Context) error {
 		return err
 	}
 	q := fmt.Sprintf("select * from get_full_url('%s', 0)", m["url"])
-	res := get_query(h.DB, q)
+	res := getQuery(h.DB, q)
 	return c.JSON(http.StatusOK, res)
 }
 
 // Get raw info from database
-func get_query(db *sql.DB, query string) Data{
+func getQuery(db *sql.DB, query string) Data{
 	rows, err := db.Query(query)
 	if err != nil {
 		return Data{OK:false}
