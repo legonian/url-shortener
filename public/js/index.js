@@ -16,7 +16,7 @@ async function sendToServer(urlText){
     body: formBody
   })
 
-  if (res.status === 200) {
+  if (res.status === 201) {
     ans = await res.json()
     
     const protocol =  window.location.protocol
