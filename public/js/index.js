@@ -6,9 +6,6 @@ const showError = () => { errorMessage.hidden = false }
 const hideError = () => { errorMessage.hidden = true }
 
 async function sendToServer(urlText){
-  console.log('urlText =', urlText)
-  hideError()
-
   const formBody = JSON.stringify({
     url: urlText
   })
