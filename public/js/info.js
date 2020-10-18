@@ -8,7 +8,7 @@ async function getInfo(){
     url: urlCode
   })
 
-  const res = await window.fetch(`/api/${urlCode}`, {
+  const res = await window.fetch(`/${urlCode}/json`, {
     method: 'post',
     headers: { 'Content-Type': 'application/json;charset=UTF-8' },
     body: formBody

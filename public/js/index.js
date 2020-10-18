@@ -13,7 +13,7 @@ async function sendToServer(urlText){
     url: urlText
   })
 
-  const res = await window.fetch('/submit', {
+  const res = await window.fetch('/create', {
     method: 'post',
     headers: { 'Content-Type': 'application/json;charset=UTF-8' },
     body: formBody
