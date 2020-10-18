@@ -18,6 +18,11 @@ $ go get -d
 $ go build
 ```
 
+## Demo
+
+Demo app is running in Heroku Cloud:
+https://rocky-bayou-89648.herokuapp.com/
+
 ## Author
 
 Oleh Ihnatushenko
