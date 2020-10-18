@@ -32,8 +32,7 @@ copyButton.onclick = function () {
     clickCount.innerText = urlInfo.views_count
 
     const hostname = window.location.hostname
-    const port = window.location.port == 80 || window.location.port == 443 ?
-      '' : `:${window.location.port}`
+    const port = window.location.port === '' ? '' : `:${window.location.port}`
     const pathname = urlInfo.short_url
     const shortURL = `${hostname}${port}/${pathname}`
     userInput.defaultValue = shortURL
