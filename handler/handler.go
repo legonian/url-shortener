@@ -73,6 +73,7 @@ func (h *Handler) Redirect(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	log.Println("Not Cached")
 	return c.Redirect(http.StatusFound, res.FullURL)
 }
 
@@ -90,6 +91,7 @@ func (h *Handler) InfoJson(c echo.Context) error {
 	}
 	q := fmt.Sprintf("select * from get_full_url('%s', 0)", urlCode)
 	res := getQuery(h.DB, q)
+	log.Println("Not Cached")
 	return c.JSON(http.StatusOK, res)
 }
 
