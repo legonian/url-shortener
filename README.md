@@ -9,6 +9,10 @@ Before running set ``$PORT`` to set server port and ``$DATABASE_URL`` for
 PostgreSQL connection string. Also ``create_pg.sql`` script is presented to
 create required table in PostgreSQL database.
 
+App using memory cache to redirect URLs. Cache limited by time duration, to
+see current value or set it to custom go to ``/handler/cache.go`` and
+change CACHE_DURATION constant.
+
 ## Installation
 
 ```
