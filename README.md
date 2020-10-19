@@ -15,11 +15,23 @@ change CACHE_DURATION constant.
 
 ## Installation
 
+To install:
+
 ```
 $ git clone https://github.com/legonian/url-shortener
 $ cd url-shortener
 $ go get -d
 $ go build
+```
+
+## Test
+
+App include testing of initialization, database, cache, route requests.
+
+To run all tests:
+
+```
+go test -v ./...
 ```
 
 ## Demo
