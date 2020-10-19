@@ -19,6 +19,15 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type (
+	Data struct {
+		OK         bool   `json:"ok"`
+		ShortURL   string `json:"short_url"`
+		FullURL    string `json:"full_url"`
+		ViewsCount int    `json:"views_count"`
+	}
+)
+
 var (
 	validURL   string = "https://www.google.com/"
 	invalidURL string = "qwerty"
