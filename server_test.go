@@ -2,35 +2,27 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
-	"github.com/legonian/url-shortener/database"
-	"github.com/legonian/url-shortener/handler"
-	"os"
-	"testing"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"database/sql"
-	"errors"
+	"os"
 	"strings"
-	"fmt"
+	"testing"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/legonian/url-shortener/database"
+	"github.com/legonian/url-shortener/handler"
 	_ "github.com/lib/pq"
 )
 
-type (
-	Data struct {
-		OK bool `json:"ok"`
-		ShortURL string `json:"short_url"`
-		FullURL string `json:"full_url"`
-		ViewsCount int `json:"views_count"`
-	}
-)
-
 var (
-	validURL string = "https://www.google.com/"
+	validURL   string = "https://www.google.com/"
 	invalidURL string = "qwerty"
-	d Data
+	d          Data
 )
 
 func TestIndexPage(t *testing.T) {
@@ -58,7 +50,7 @@ func TestCreatingValidURL(t *testing.T) {
 	h := &handler.Handler{DB: db}
 	e.POST("/create", h.SetRedirectJson)
 
-	test_json := fmt.Sprintf(`{"url": "%s"}`,validURL)
+	test_json := fmt.Sprintf(`{"url": "%s"}`, validURL)
 	req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(test_json))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
@@ -68,7 +60,7 @@ func TestCreatingValidURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rec.Code != 201 {
+	if rec.Code != http.StatusCreated {
 		t.Fatal("Not succeeded")
 	}
 	err = json.NewDecoder(rec.Body).Decode(&d)
@@ -95,7 +87,7 @@ func TestCreatingInvalidURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rec.Code != 400 {
+	if rec.Code != http.StatusBadRequest {
 		t.Fatal("Probably succeeded")
 	}
 }
@@ -108,7 +100,6 @@ func TestOnGoodURL(t *testing.T) {
 	h := &handler.Handler{DB: db}
 	e.GET("/:short_url", h.Redirect)
 
-	// shortURL := fmt.Sprintf("/%s", )
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -120,10 +111,11 @@ func TestOnGoodURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rec.Code != 302 {
+	if rec.Code != http.StatusFound {
 		t.Fatal(rec.Body)
 	}
-	if rec.HeaderMap["Location"][0] != validURL {
+	redirectedURL := rec.HeaderMap["Location"][0]
+	if redirectedURL != validURL {
 		t.Fatal(rec.HeaderMap)
 	}
 }
@@ -144,7 +136,7 @@ func TestOnWrongURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rec.Code != 400 {
+	if rec.Code != http.StatusNotFound {
 		t.Fatal(rec.Code)
 	}
 }
