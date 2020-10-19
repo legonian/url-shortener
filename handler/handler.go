@@ -68,7 +68,7 @@ func (h *Handler) Redirect(c echo.Context) error {
 	if !res.OK {
 		return c.String(http.StatusNotFound, "Shortcut Not Found")
 	}
-	err := AddToCache(res, "10s")
+	err := AddToCache(res)
 	if err != nil {
 		return err
 	}

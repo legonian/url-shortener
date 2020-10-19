@@ -26,6 +26,8 @@ var store = Storage{
 	mu:    &sync.RWMutex{},
 }
 
+const CACHE_DURATION = "20s"
+
 func (item Item) Expired() bool {
 	if item.Expiration == 0 {
 		return false
@@ -67,13 +69,13 @@ func CheckCache(short_url string) string {
 }
 
 //Set data to cache
-func AddToCache(newData Data, duration string) error {
-	if d, err := time.ParseDuration(duration); err == nil {
-		fmt.Printf("Cache new: %s for %s\n", newData.ShortURL, duration)
+func AddToCache(newData Data) error {
+	if d, err := time.ParseDuration(CACHE_DURATION); err == nil {
+		fmt.Printf("> Cache new: for route /%s. Expired in %s\n", newData.ShortURL, CACHE_DURATION)
 		store.Set(newData, d)
 		return nil
 	} else {
-		fmt.Printf("Cache err: %s\n", err)
+		fmt.Printf("> Cache err: %s\n", err)
 		return err
 	}
 }
