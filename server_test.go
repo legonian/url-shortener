@@ -35,6 +35,10 @@ var (
 	d          Data
 )
 
+func init() {
+	log.SetOutput(ioutil.Discard)
+}
+
 func TestIndexPage(t *testing.T) {
 	db, e, err := init_app()
 	expect(t, err, nil)
@@ -120,7 +124,6 @@ func TestOnWrongURL(t *testing.T) {
 }
 
 func init_app() (*database.DataBaseModel, *echo.Echo, error) {
-	log.SetOutput(ioutil.Discard)
 	db := &database.Model
 	err := db.Init()
 	if err != nil {
