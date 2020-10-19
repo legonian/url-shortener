@@ -38,9 +38,7 @@ var (
 
 func TestIndexPage(t *testing.T) {
 	db, e, err := init_app()
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 	h := &handler.Handler{DB: db}
 	e.GET("/", h.Index)
 
@@ -48,16 +46,12 @@ func TestIndexPage(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	c := e.NewContext(req, rec)
 	err = h.Index(c)
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 }
 
 func TestCreatingValidURL(t *testing.T) {
 	db, e, err := init_app()
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 	h := &handler.Handler{DB: db}
 	e.POST("/create", h.SetRedirectJson)
 
@@ -68,23 +62,15 @@ func TestCreatingValidURL(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	err = h.SetRedirectJson(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rec.Code != http.StatusCreated {
-		t.Fatal("Not succeeded")
-	}
+	expect(t, err, nil)
+	expect(t, rec.Code, http.StatusCreated)
 	err = json.NewDecoder(rec.Body).Decode(&d)
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 }
 
 func TestCreatingInvalidURL(t *testing.T) {
 	db, e, err := init_app()
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 	h := &handler.Handler{DB: db}
 	e.POST("/create", h.SetRedirectJson)
 
@@ -95,19 +81,13 @@ func TestCreatingInvalidURL(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	err = h.SetRedirectJson(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rec.Code != http.StatusBadRequest {
-		t.Fatal("Probably succeeded")
-	}
+	expect(t, err, nil)
+	expect(t, rec.Code, http.StatusBadRequest)
 }
 
 func TestOnGoodURL(t *testing.T) {
 	db, e, err := init_app()
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 	h := &handler.Handler{DB: db}
 	e.GET("/:short_url", h.Redirect)
 
@@ -117,39 +97,27 @@ func TestOnGoodURL(t *testing.T) {
 	c.SetPath("/:short_url")
 	c.SetParamNames("short_url")
 	c.SetParamValues(d.ShortURL)
-
 	err = h.Redirect(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rec.Code != http.StatusFound {
-		t.Fatal(rec.Body)
-	}
 	redirectedURL := rec.HeaderMap["Location"][0]
-	if redirectedURL != validURL {
-		t.Fatal(rec.HeaderMap)
-	}
+
+	expect(t, err, nil)
+	expect(t, rec.Code, http.StatusFound)
+	expect(t, redirectedURL, validURL)
 }
 
 func TestOnWrongURL(t *testing.T) {
 	db, e, err := init_app()
-	if err != nil {
-		t.Fatal(err)
-	}
+	expect(t, err, nil)
 	h := &handler.Handler{DB: db}
 	e.GET("/:short_url", h.Redirect)
 
 	req := httptest.NewRequest(http.MethodGet, "/xxxxxxxxxxxxx", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-
 	err = h.Redirect(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rec.Code != http.StatusNotFound {
-		t.Fatal(rec.Code)
-	}
+
+	expect(t, err, nil)
+	expect(t, rec.Code, http.StatusNotFound)
 }
 
 func init_app() (*sql.DB, *echo.Echo, error) {
@@ -171,4 +139,10 @@ func init_app() (*sql.DB, *echo.Echo, error) {
 	e.Static("/public", "public")
 
 	return db, e, err
+}
+
+func expect(t *testing.T, varToTest interface{}, expected interface{}) {
+	if varToTest != expected {
+		t.Fatalf("variable value is %v, expected %v", varToTest, expected)
+	}
 }
