@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/legonian/url-shortener/database"
-	"github.com/legonian/url-shortener/handler"
 	"log"
 	"os"
+
+	"github.com/legonian/url-shortener/database"
+	"github.com/legonian/url-shortener/handler"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -30,9 +31,12 @@ func main() {
 	// Initialize handler
 	h := &handler.Handler{DB: db}
 
-	// Echo middlewares
-	e.Use(middleware.Logger())
+	// Middlewares
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "path:${uri} | ${method} method to ${status} | t=${latency_human}\n",
+	}))
 	e.Use(middleware.Recover())
+	e.Use(middleware.Secure())
 
 	// Static Files including HTML
 	e.Static("/public", "public")
