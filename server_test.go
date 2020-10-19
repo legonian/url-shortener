@@ -2,7 +2,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -120,9 +119,10 @@ func TestOnWrongURL(t *testing.T) {
 	expect(t, rec.Code, http.StatusNotFound)
 }
 
-func init_app() (*sql.DB, *echo.Echo, error) {
+func init_app() (*database.DataBaseModel, *echo.Echo, error) {
 	log.SetOutput(ioutil.Discard)
-	db, err := database.Init()
+	db := &database.Model
+	err := db.Init()
 	if err != nil {
 		return nil, nil, err
 	}

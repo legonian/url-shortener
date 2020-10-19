@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/labstack/echo/v4"
+	"github.com/legonian/url-shortener/database"
 	_ "github.com/lib/pq"
 )
 
@@ -25,7 +25,7 @@ type (
 	}
 	// Interface to communicate with main app
 	Handler struct {
-		DB *sql.DB
+		DB *database.DataBaseModel
 	}
 )
 
@@ -53,27 +53,29 @@ func (h *Handler) SetRedirectJson(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &Data{OK: false})
 	}
 	q := fmt.Sprintf("select * from add_url('%s')", urlCode)
-	res := getQuery(h.DB, q)
+	res := h.DB.GetQuery(q)
 	return c.JSON(http.StatusCreated, res)
 }
 
 // Redirect to full URL
 func (h *Handler) Redirect(c echo.Context) error {
 	urlCode := c.Param("short_url")
-	cacheData := CheckCache(urlCode, h.DB)
-	if cacheData != "" {
-		return c.Redirect(http.StatusFound, cacheData)
+	cacheData := database.CheckCache(urlCode, true)
+	if cacheData.OK && cacheData.FullURL != "" {
+		return c.Redirect(http.StatusFound, cacheData.FullURL)
 	}
+
 	q := fmt.Sprintf("select * from get_full_url('%s')", urlCode)
-	res := getQuery(h.DB, q)
+	//res := getQuery(h.DB, q)
+	res := h.DB.GetQuery(q)
 	if !res.OK {
 		return c.String(http.StatusNotFound, "Shortcut Not Found")
 	}
-	err := AddToCache(res)
+	err := database.AddToCache(res)
 	if err != nil {
 		return err
 	}
-	log.Println("Not Cached")
+	log.Println("Using not cached data")
 	return c.Redirect(http.StatusFound, res.FullURL)
 }
 
@@ -84,38 +86,18 @@ func (h *Handler) InfoJson(c echo.Context) error {
 		return err
 	}
 	urlCode := fmt.Sprintf("%s", m["url"])
-	cache := store.Get(urlCode)
-	if cache.OK {
-		log.Print("Cache get\n")
-		return c.JSON(http.StatusOK, cache)
+	cacheData := database.CheckCache(urlCode, false)
+	if cacheData.OK {
+		return c.JSON(http.StatusOK, cacheData)
 	}
+
 	q := fmt.Sprintf("select * from get_full_url('%s', 0)", urlCode)
-	res := getQuery(h.DB, q)
-	log.Println("Not Cached")
-	return c.JSON(http.StatusOK, res)
-}
-
-// Get raw info from database
-func getQuery(db *sql.DB, query string) Data {
-	rows, err := db.Query(query)
+	//res := getQuery(h.DB, q)
+	res := h.DB.GetQuery(q)
+	err := database.AddToCache(res)
 	if err != nil {
-		return Data{OK: false}
+		return err
 	}
-	defer rows.Close()
-	res := make([]Data, 0)
-	for rows.Next() {
-		url := Data{}
-		err := rows.Scan(&url.ShortURL, &url.FullURL, &url.ViewsCount)
-
-		if err != nil {
-			res = append(res, Data{OK: false})
-		} else {
-			url.OK = true
-			res = append(res, url)
-		}
-	}
-	if err = rows.Err(); err != nil {
-		return Data{OK: false}
-	}
-	return res[0]
+	log.Println("--- Using not cached data")
+	return c.JSON(http.StatusOK, res)
 }

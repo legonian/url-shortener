@@ -14,10 +14,16 @@ import (
 )
 
 func main() {
-	log.SetOutput(ioutil.Discard)
+	if os.Getenv("GO_ENABLE_LOG") == "true" {
+		log.Printf("Loggin is ON, GO_ENABLE_LOG=true")
+	} else {
+		log.SetOutput(ioutil.Discard)
+	}
 
 	// Initialize database
-	db, err := database.Init()
+	db := &database.Model
+	err := db.Init()
+	// db, err := database.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
