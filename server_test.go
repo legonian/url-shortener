@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -151,6 +153,7 @@ func TestOnWrongURL(t *testing.T) {
 }
 
 func init_app() (*sql.DB, *echo.Echo, error) {
+	log.SetOutput(ioutil.Discard)
 	db, err := database.Init()
 	if err != nil {
 		return nil, nil, err

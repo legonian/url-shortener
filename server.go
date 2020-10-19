@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -13,6 +14,8 @@ import (
 )
 
 func main() {
+	log.SetOutput(ioutil.Discard)
+
 	// Initialize database
 	db, err := database.Init()
 	if err != nil {
