@@ -59,7 +59,7 @@ func (h *Handler) SetRedirectJson(c echo.Context) error {
 // Redirect to full URL
 func (h *Handler) Redirect(c echo.Context) error {
 	short_url := c.Param("short_url")
-	cacheData := CheckCache(short_url)
+	cacheData := CheckCache(short_url, h.DB)
 	if cacheData != "" {
 		return c.Redirect(http.StatusFound, cacheData)
 	}

@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -12,6 +14,7 @@ type (
 	// Single cache data
 	Item struct {
 		Content    Data
+		Counter    int
 		Expiration int64
 	}
 	// All cache data
@@ -35,14 +38,20 @@ func (item Item) Expired() bool {
 	return time.Now().UnixNano() > item.Expiration
 }
 
-func (s Storage) Get(key string) Data {
+func (s Storage) Get(key string, db *sql.DB) Data {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	s.items[key] = Item{
+		Content:    s.items[key].Content,
+		Counter:    s.items[key].Counter + 1,
+		Expiration: s.items[key].Expiration,
+	}
 
 	item := s.items[key]
 	if item.Expired() {
 		delete(s.items, key)
-		return Data{OK: false}
+		q := fmt.Sprintf("select * from get_full_url('%s',%v)", item.Content.ShortURL, item.Counter)
+		getQuery(db, q)
 	}
 	return item.Content
 }
@@ -53,16 +62,17 @@ func (s Storage) Set(d Data, duration time.Duration) {
 
 	s.items[d.ShortURL] = Item{
 		Content:    d,
+		Counter:    0,
 		Expiration: time.Now().Add(duration).UnixNano(),
 	}
 }
 
 // Get data from cache
-func CheckCache(short_url string) string {
-	content := store.Get(short_url)
+func CheckCache(short_url string, db *sql.DB) string {
+	content := store.Get(short_url, db)
 
 	if content.OK {
-		fmt.Print("Cache get\n")
+		log.Print("Cache get\n")
 		return content.FullURL
 	}
 	return ""
@@ -71,11 +81,11 @@ func CheckCache(short_url string) string {
 //Set data to cache
 func AddToCache(newData Data) error {
 	if d, err := time.ParseDuration(CACHE_DURATION); err == nil {
-		fmt.Printf("> Cache new: for route /%s. Expired in %s\n", newData.ShortURL, CACHE_DURATION)
+		log.Printf("> Cache new: for route /%s. Expired in %s\n", newData.ShortURL, CACHE_DURATION)
 		store.Set(newData, d)
 		return nil
 	} else {
-		fmt.Printf("> Cache err: %s\n", err)
+		log.Printf("> Cache err: %s\n", err)
 		return err
 	}
 }
