@@ -50,7 +50,7 @@ func (s Storage) Get(key string) Data {
 	return item.Content
 }
 
-func (s Storage) GetCount(key string, db *sql.DB) Data {
+func (s Storage) GetWithIncrement(key string, db *sql.DB) Data {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	s.items[key] = Item{
@@ -81,7 +81,7 @@ func (s Storage) Set(d Data, duration time.Duration) {
 
 // Get data from cache
 func CheckCache(short_url string, db *sql.DB) string {
-	cache := store.GetCount(short_url, db)
+	cache := store.GetWithIncrement(short_url, db)
 
 	if cache.OK {
 		log.Print("Cache get\n")

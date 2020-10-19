@@ -59,12 +59,12 @@ func (h *Handler) SetRedirectJson(c echo.Context) error {
 
 // Redirect to full URL
 func (h *Handler) Redirect(c echo.Context) error {
-	short_url := c.Param("short_url")
-	cacheData := CheckCache(short_url, h.DB)
+	urlCode := c.Param("short_url")
+	cacheData := CheckCache(urlCode, h.DB)
 	if cacheData != "" {
 		return c.Redirect(http.StatusFound, cacheData)
 	}
-	q := fmt.Sprintf("select * from get_full_url('%s')", short_url)
+	q := fmt.Sprintf("select * from get_full_url('%s')", urlCode)
 	res := getQuery(h.DB, q)
 	if !res.OK {
 		return c.String(http.StatusNotFound, "Shortcut Not Found")
