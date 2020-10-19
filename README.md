@@ -11,8 +11,7 @@ create required table in PostgreSQL database.
 
 App using memory cache to redirect URLs. Cache limited by time duration, to
 see current value or set it to custom go to ``/handler/cache.go`` and
-change CACHE_DURATION constant. Because of cashing url info page will update
-view count only when cache expired.
+change CACHE_DURATION constant.
 
 ## Installation
 

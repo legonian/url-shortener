@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -81,7 +82,13 @@ func (h *Handler) InfoJson(c echo.Context) error {
 	if err := c.Bind(&m); err != nil {
 		return err
 	}
-	q := fmt.Sprintf("select * from get_full_url('%s', 0)", m["url"])
+	urlCode := fmt.Sprintf("%s", m["url"])
+	cache := store.Get(urlCode)
+	if cache.OK {
+		log.Print("Cache get\n")
+		return c.JSON(http.StatusOK, cache)
+	}
+	q := fmt.Sprintf("select * from get_full_url('%s', 0)", urlCode)
 	res := getQuery(h.DB, q)
 	return c.JSON(http.StatusOK, res)
 }

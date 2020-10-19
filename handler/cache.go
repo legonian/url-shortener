@@ -38,7 +38,19 @@ func (item Item) Expired() bool {
 	return time.Now().UnixNano() > item.Expiration
 }
 
-func (s Storage) Get(key string, db *sql.DB) Data {
+func (s Storage) Get(key string) Data {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	item := s.items[key]
+	item.Content.ViewsCount += s.items[key].Counter
+	if item.Expired() {
+		delete(s.items, key)
+	}
+	return item.Content
+}
+
+func (s Storage) GetCount(key string, db *sql.DB) Data {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	s.items[key] = Item{
@@ -69,11 +81,11 @@ func (s Storage) Set(d Data, duration time.Duration) {
 
 // Get data from cache
 func CheckCache(short_url string, db *sql.DB) string {
-	content := store.Get(short_url, db)
+	cache := store.GetCount(short_url, db)
 
-	if content.OK {
+	if cache.OK {
 		log.Print("Cache get\n")
-		return content.FullURL
+		return cache.FullURL
 	}
 	return ""
 }
