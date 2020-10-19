@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"fmt"
-	"net/url"
-	"net/http"
 	"database/sql"
+	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
@@ -13,10 +13,10 @@ import (
 type (
 	// Data type that will be sent to client
 	Data struct {
-		OK bool `json:"ok"`
-		ShortURL string `json:"short_url"`
-		FullURL string `json:"full_url"`
-		ViewsCount int `json:"views_count"`
+		OK         bool   `json:"ok"`
+		ShortURL   string `json:"short_url"`
+		FullURL    string `json:"full_url"`
+		ViewsCount int    `json:"views_count"`
 	}
 	// Data type that coming from client
 	Url struct {
@@ -59,10 +59,18 @@ func (h *Handler) SetRedirectJson(c echo.Context) error {
 // Redirect to full URL
 func (h *Handler) Redirect(c echo.Context) error {
 	short_url := c.Param("short_url")
+	cacheData := CheckCache(short_url)
+	if cacheData != "" {
+		return c.Redirect(http.StatusFound, cacheData)
+	}
 	q := fmt.Sprintf("select * from get_full_url('%s')", short_url)
 	res := getQuery(h.DB, q)
 	if !res.OK {
-		return c.String(http.StatusBadRequest, "Shortcut Not Found")
+		return c.String(http.StatusNotFound, "Shortcut Not Found")
+	}
+	err := AddToCache(res, "10s")
+	if err != nil {
+		return err
 	}
 	return c.Redirect(http.StatusFound, res.FullURL)
 }
@@ -79,26 +87,26 @@ func (h *Handler) InfoJson(c echo.Context) error {
 }
 
 // Get raw info from database
-func getQuery(db *sql.DB, query string) Data{
+func getQuery(db *sql.DB, query string) Data {
 	rows, err := db.Query(query)
 	if err != nil {
-		return Data{OK:false}
+		return Data{OK: false}
 	}
 	defer rows.Close()
 	res := make([]Data, 0)
 	for rows.Next() {
 		url := Data{}
 		err := rows.Scan(&url.ShortURL, &url.FullURL, &url.ViewsCount)
-		
+
 		if err != nil {
-			res = append(res, Data{OK:false})
+			res = append(res, Data{OK: false})
 		} else {
 			url.OK = true
 			res = append(res, url)
 		}
 	}
 	if err = rows.Err(); err != nil {
-		return Data{OK:false}
+		return Data{OK: false}
 	}
 	return res[0]
 }
