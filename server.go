@@ -1,3 +1,5 @@
+// Package main provides Echo framework initialization and set handlers to
+// their path
 package main
 
 import (
