@@ -3,13 +3,11 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -17,7 +15,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/legonian/url-shortener/database"
 	"github.com/legonian/url-shortener/handler"
-	_ "github.com/lib/pq"
 )
 
 type (
@@ -35,28 +32,22 @@ var (
 	d          Data
 )
 
-func init() {
-	log.SetOutput(ioutil.Discard)
-}
-
 func TestIndexPage(t *testing.T) {
-	db, e, err := init_app()
+	e, err := init_app()
 	expect(t, err, nil)
-	h := &handler.Handler{DB: db}
-	e.GET("/", h.Index)
+	e.GET("/", handler.Index)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	c := e.NewContext(req, rec)
-	err = h.Index(c)
+	err = handler.Index(c)
 	expect(t, err, nil)
 }
 
 func TestCreatingValidURL(t *testing.T) {
-	db, e, err := init_app()
+	e, err := init_app()
 	expect(t, err, nil)
-	h := &handler.Handler{DB: db}
-	e.POST("/create", h.SetRedirectJson)
+	e.POST("/create", handler.SetRedirectJson)
 
 	test_json := fmt.Sprintf(`{"url": "%s"}`, validURL)
 	req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(test_json))
@@ -64,7 +55,7 @@ func TestCreatingValidURL(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	err = h.SetRedirectJson(c)
+	err = handler.SetRedirectJson(c)
 	expect(t, err, nil)
 	expect(t, rec.Code, http.StatusCreated)
 	err = json.NewDecoder(rec.Body).Decode(&d)
@@ -72,10 +63,9 @@ func TestCreatingValidURL(t *testing.T) {
 }
 
 func TestCreatingInvalidURL(t *testing.T) {
-	db, e, err := init_app()
+	e, err := init_app()
 	expect(t, err, nil)
-	h := &handler.Handler{DB: db}
-	e.POST("/create", h.SetRedirectJson)
+	e.POST("/create", handler.SetRedirectJson)
 
 	test_json := fmt.Sprintf(`{"url": "%s"}`, invalidURL)
 	req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(test_json))
@@ -83,16 +73,15 @@ func TestCreatingInvalidURL(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	err = h.SetRedirectJson(c)
+	err = handler.SetRedirectJson(c)
 	expect(t, err, nil)
 	expect(t, rec.Code, http.StatusBadRequest)
 }
 
 func TestOnGoodURL(t *testing.T) {
-	db, e, err := init_app()
+	e, err := init_app()
 	expect(t, err, nil)
-	h := &handler.Handler{DB: db}
-	e.GET("/:short_url", h.Redirect)
+	e.GET("/:short_url", handler.Redirect)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -100,7 +89,7 @@ func TestOnGoodURL(t *testing.T) {
 	c.SetPath("/:short_url")
 	c.SetParamNames("short_url")
 	c.SetParamValues(d.ShortURL)
-	err = h.Redirect(c)
+	err = handler.Redirect(c)
 	redirectedURL := rec.HeaderMap["Location"][0]
 
 	expect(t, err, nil)
@@ -109,39 +98,36 @@ func TestOnGoodURL(t *testing.T) {
 }
 
 func TestOnWrongURL(t *testing.T) {
-	db, e, err := init_app()
+	e, err := init_app()
 	expect(t, err, nil)
-	h := &handler.Handler{DB: db}
-	e.GET("/:short_url", h.Redirect)
+	e.GET("/:short_url", handler.Redirect)
 
 	req := httptest.NewRequest(http.MethodGet, "/xxxxxxxxxxxxx", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	err = h.Redirect(c)
+	err = handler.Redirect(c)
 
 	expect(t, err, nil)
 	expect(t, rec.Code, http.StatusNotFound)
 }
 
-func init_app() (*database.DataBaseModel, *echo.Echo, error) {
-	db := &database.Model
-	err := db.Init()
-	if err != nil {
-		return nil, nil, err
-	}
+func init_app() (*echo.Echo, error) {
+	log.SetOutput(ioutil.Discard)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		err = errors.New("$PORT must be set")
-		return nil, nil, err
+	err := database.Init()
+	if err != nil {
+		return nil, err
 	}
 
 	e := echo.New()
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "path:${uri} | ${method} method to ${status} | t=${latency_human}\n",
+	}))
 	e.Use(middleware.Recover())
+	e.Use(middleware.Secure())
 	e.Static("/public", "public")
 
-	return db, e, err
+	return e, err
 }
 
 func expect(t *testing.T, varToTest interface{}, expected interface{}) {

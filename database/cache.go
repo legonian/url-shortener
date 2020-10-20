@@ -5,30 +5,30 @@ import (
 	"log"
 	"sync"
 	"time"
-
-	_ "github.com/lib/pq"
 )
 
+// Cache data types
 type (
-	// Single cache data
 	Item struct {
 		Content    Data
 		Counter    int
 		Expiration int64
 	}
-	// All cache data
 	Storage struct {
 		items map[string]Item
 		mu    *sync.RWMutex
 	}
 )
 
-var Store = Storage{
+var store = Storage{
 	items: make(map[string]Item),
 	mu:    &sync.RWMutex{},
 }
 
-const CACHE_DURATION = "20s"
+const (
+	CACHE_DURATION = "20s"
+	// CACHE_LIMIT    = 2
+)
 
 func (item Item) Expired() bool {
 	if item.Expiration == 0 {
@@ -37,7 +37,7 @@ func (item Item) Expired() bool {
 	return item.Expiration < time.Now().UnixNano()
 }
 
-func (s Storage) Get(key string, increment int) Data {
+func (s Storage) cache(key string, increment int) Data {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -55,8 +55,6 @@ func (s Storage) Get(key string, increment int) Data {
 	}
 
 	item := s.items[key]
-	item.Content.ViewsCount += item.Counter
-
 	if item.Expired() {
 		delete(s.items, key)
 		q := fmt.Sprintf("select * from get_full_url('%s',%v)",
@@ -65,11 +63,13 @@ func (s Storage) Get(key string, increment int) Data {
 		)
 		item.Content = Model.GetQuery(q)
 	}
+
+	item.Content.ViewsCount += item.Counter
 	log.Printf("-- Cache Found: %v", item.Content)
 	return item.Content
 }
 
-func (s Storage) Set(d Data, duration time.Duration) {
+func (s Storage) setCache(d Data, duration time.Duration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -84,22 +84,51 @@ func (s Storage) Set(d Data, duration time.Duration) {
 func CheckCache(short_url string, isIter bool) Data {
 	log.Printf("-- Cache getting... (iterating? = %v)\n", isIter)
 	if isIter {
-		cache := Store.Get(short_url, 1)
+		cache := store.cache(short_url, 1)
 		return cache
 	} else {
-		cache := Store.Get(short_url, 0)
+		cache := store.cache(short_url, 0)
 		return cache
 	}
 }
 
 //Set data to cache
-func AddToCache(newData Data) error {
+func AddCache(newData Data) error {
+	refreshCache()
 	if d, err := time.ParseDuration(CACHE_DURATION); err == nil {
 		log.Printf("-- Cache set (%s, expired in %s)\n", newData.ShortURL, CACHE_DURATION)
-		Store.Set(newData, d)
+		store.setCache(newData, d)
 		return nil
 	} else {
 		log.Printf("-- Cache err: %s\n", err)
 		return err
+	}
+}
+
+func refreshCache() {
+	store.mu.RLock()
+	defer store.mu.RUnlock()
+
+	// if CACHE_LIMIT < len(store.items) {
+	// 	log.Print("-- Cache limit: cleare all cache\n")
+	// 	store.items = make(map[string]Item)
+	// }
+
+	for i, item := range store.items {
+		isExpired := item.Expired()
+		isHasViewToSave := 0 < item.Counter
+
+		if isExpired && isHasViewToSave {
+			q := fmt.Sprintf("select * from get_full_url('%s',%v)",
+				item.Content.ShortURL,
+				item.Counter,
+			)
+			Model.GetQuery(q)
+		}
+
+		if isExpired {
+			log.Printf("-- Cache %s expired and cleared\n", i)
+			delete(store.items, i)
+		}
 	}
 }

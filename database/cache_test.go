@@ -1,8 +1,6 @@
 package database
 
 import (
-	"io/ioutil"
-	"log"
 	"testing"
 )
 
@@ -22,20 +20,16 @@ var (
 	}
 )
 
-func init() {
-	log.SetOutput(ioutil.Discard)
-}
-
 func TestCreateCache(t *testing.T) {
-	err := Model.Init()
+	err := Init()
 	expect(t, err, nil)
 
-	err = AddToCache(validData)
+	err = AddCache(validData)
 	expect(t, err, nil)
 }
 
 func TestGetCache(t *testing.T) {
-	err := Model.Init()
+	err := Init()
 	expect(t, err, nil)
 
 	newData = CheckCache(validData.ShortURL, false)
@@ -47,6 +41,6 @@ func TestGetCache(t *testing.T) {
 
 func expect(t *testing.T, varToTest interface{}, expected interface{}) {
 	if varToTest != expected {
-		t.Fatalf("variable value is %v, expected %v", varToTest, expected)
+		t.Fatalf("Variable value is '%v', expected '%v'", varToTest, expected)
 	}
 }

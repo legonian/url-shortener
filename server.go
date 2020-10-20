@@ -10,35 +10,30 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	_ "github.com/lib/pq"
 )
 
-func main() {
-	if os.Getenv("GO_ENABLE_LOG") == "true" {
-		log.Printf("Loggin is ON, GO_ENABLE_LOG=true")
-	} else {
+var port string
+
+func init() {
+	if os.Getenv("GO_ENABLE_LOG") == "" {
 		log.SetOutput(ioutil.Discard)
 	}
+	// Check PORT env variable
+	port = os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+}
 
+func main() {
 	// Initialize database
-	db := &database.Model
-	err := db.Init()
-	// db, err := database.Init()
+	err := database.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Check PORT env variable
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	}
-
 	// Initialize app
 	e := echo.New()
-
-	// Initialize handler
-	h := &handler.Handler{DB: db}
 
 	// Middlewares
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
@@ -51,14 +46,14 @@ func main() {
 	e.Static("/public", "public")
 
 	// Main Routes
-	e.GET("/", h.Index)
-	e.GET("/:short_url", h.Redirect)
-	e.GET("/:short_url/info", h.Info)
+	e.GET("/", handler.Index)
+	e.GET("/:short_url", handler.Redirect)
+	e.GET("/:short_url/info", handler.Info)
 
 	// Called from Index Page javascript
-	e.POST("/create", h.SetRedirectJson)
+	e.POST("/create", handler.SetRedirectJson)
 	// Called from Info Page javascript
-	e.POST("/:short_url/json", h.InfoJson)
+	e.POST("/:short_url/json", handler.InfoJson)
 
 	e.Logger.Fatal(e.Start(":" + port))
 }

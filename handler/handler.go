@@ -1,14 +1,13 @@
+// Package handler provides functions that represent routing logic
 package handler
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/labstack/echo/v4"
 	"github.com/legonian/url-shortener/database"
-	_ "github.com/lib/pq"
 )
 
 type (
@@ -23,26 +22,22 @@ type (
 	Url struct {
 		Url string `json:"url"`
 	}
-	// Interface to communicate with main app
-	Handler struct {
-		DB *database.DataBaseModel
-	}
 )
 
 // Home Page
-func (h *Handler) Index(c echo.Context) error {
+func Index(c echo.Context) error {
 	return c.File("public/index.html")
 	// to test on error:
 	// return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
 }
 
 // Info Page about URL
-func (h *Handler) Info(c echo.Context) error {
+func Info(c echo.Context) error {
 	return c.File("public/info.html")
 }
 
 // Send new url to database
-func (h *Handler) SetRedirectJson(c echo.Context) error {
+func SetRedirectJson(c echo.Context) error {
 	var u Url
 	if err := c.Bind(&u); err != nil {
 		return c.JSON(http.StatusBadRequest, &Data{OK: false})
@@ -53,12 +48,12 @@ func (h *Handler) SetRedirectJson(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &Data{OK: false})
 	}
 	q := fmt.Sprintf("select * from add_url('%s')", urlCode)
-	res := h.DB.GetQuery(q)
+	res := database.Model.GetQuery(q)
 	return c.JSON(http.StatusCreated, res)
 }
 
 // Redirect to full URL
-func (h *Handler) Redirect(c echo.Context) error {
+func Redirect(c echo.Context) error {
 	urlCode := c.Param("short_url")
 	cacheData := database.CheckCache(urlCode, true)
 	if cacheData.OK && cacheData.FullURL != "" {
@@ -66,21 +61,19 @@ func (h *Handler) Redirect(c echo.Context) error {
 	}
 
 	q := fmt.Sprintf("select * from get_full_url('%s')", urlCode)
-	//res := getQuery(h.DB, q)
-	res := h.DB.GetQuery(q)
+	res := database.Model.GetQuery(q)
 	if !res.OK {
 		return c.String(http.StatusNotFound, "Shortcut Not Found")
 	}
-	err := database.AddToCache(res)
+	err := database.AddCache(res)
 	if err != nil {
 		return err
 	}
-	log.Println("Using not cached data")
 	return c.Redirect(http.StatusFound, res.FullURL)
 }
 
 // Get info about URL
-func (h *Handler) InfoJson(c echo.Context) error {
+func InfoJson(c echo.Context) error {
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
 		return err
@@ -92,12 +85,10 @@ func (h *Handler) InfoJson(c echo.Context) error {
 	}
 
 	q := fmt.Sprintf("select * from get_full_url('%s', 0)", urlCode)
-	//res := getQuery(h.DB, q)
-	res := h.DB.GetQuery(q)
-	err := database.AddToCache(res)
+	res := database.Model.GetQuery(q)
+	err := database.AddCache(res)
 	if err != nil {
 		return err
 	}
-	log.Println("--- Using not cached data")
 	return c.JSON(http.StatusOK, res)
 }
