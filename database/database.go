@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/lib/pq"
 )
 
 type (
@@ -26,7 +26,7 @@ var Model DataBaseModel
 // Initialize database
 func Init() error {
 	sql_url := os.Getenv("DATABASE_URL")
-	db, err := sql.Open("pgx", sql_url)
+	db, err := sql.Open("postgres", sql_url)
 	if err != nil {
 		return err
 	}
