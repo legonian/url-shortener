@@ -21,7 +21,14 @@ type (
 	}
 )
 
-var Model DataBaseModel
+var (
+	Model DataBaseModel
+)
+
+const (
+	IsViewed  int = 1
+	NotViewed int = 0
+)
 
 // Initialize database
 func Init() error {
@@ -38,27 +45,40 @@ func Init() error {
 	return nil
 }
 
-// Get raw info from database
-func (this *DataBaseModel) GetQuery(query string) Data {
-	rows, err := this.DB.Query(query)
+func GetData(shortUrl string, viewIncrease int) Data {
+	stmt, err := Model.DB.Prepare("select * from get_full_url($1,$2)")
 	if err != nil {
 		return Data{OK: false}
 	}
-	defer rows.Close()
-	res := make([]Data, 0)
-	for rows.Next() {
-		url := Data{}
-		err := rows.Scan(&url.ShortURL, &url.FullURL, &url.ViewsCount)
+	defer stmt.Close()
 
-		if err != nil {
-			res = append(res, Data{OK: false})
-		} else {
-			url.OK = true
-			res = append(res, url)
-		}
-	}
-	if err = rows.Err(); err != nil {
+	data := Data{OK: true}
+	row := stmt.QueryRow(shortUrl, viewIncrease)
+	err = row.Scan(&data.ShortURL, &data.FullURL, &data.ViewsCount)
+	if err != nil && err != sql.ErrNoRows {
 		return Data{OK: false}
 	}
-	return res[0]
+	log.Println(data)
+	log.Println(data)
+	log.Println(data)
+	log.Println(data)
+	return data
+}
+
+func AddData(shortUrl string) Data {
+	stmt, err := Model.DB.Prepare("select * from add_url($1)")
+	if err != nil {
+		log.Println(err)
+		return Data{OK: false}
+	}
+	defer stmt.Close()
+
+	data := Data{OK: true}
+	row := stmt.QueryRow(shortUrl)
+	err = row.Scan(&data.ShortURL, &data.FullURL, &data.ViewsCount)
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err)
+		return Data{OK: false}
+	}
+	return data
 }
