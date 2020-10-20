@@ -26,8 +26,8 @@ var store = Storage{
 }
 
 const (
-	CACHE_DURATION = "20s"
-	// CACHE_LIMIT    = 2
+	CACHE_DURATION = "30s"
+	CACHE_LIMIT    = 10
 )
 
 func (item Item) Expired() bool {
@@ -109,10 +109,10 @@ func refreshCache() {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
-	// if CACHE_LIMIT < len(store.items) {
-	// 	log.Print("-- Cache limit: cleare all cache\n")
-	// 	store.items = make(map[string]Item)
-	// }
+	if CACHE_LIMIT < len(store.items) {
+		log.Print("-- Cache limit: cleare all cache\n")
+		store.items = make(map[string]Item)
+	}
 
 	for i, item := range store.items {
 		isExpired := item.Expired()
