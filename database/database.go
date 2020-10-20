@@ -1,3 +1,4 @@
+// Package database provides access to dababase and wrap specific database logic
 package database
 
 import (
@@ -5,11 +6,10 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 type (
-	// Data type that will be sent to client
 	Data struct {
 		OK         bool   `json:"ok"`
 		ShortURL   string `json:"short_url"`
@@ -23,24 +23,24 @@ type (
 
 var Model DataBaseModel
 
-func (model *DataBaseModel) Init() error {
+// Initialize database
+func Init() error {
 	sql_url := os.Getenv("DATABASE_URL")
-	sqlModel, err := sql.Open("postgres", sql_url)
-	model.DB = sqlModel
+	db, err := sql.Open("pgx", sql_url)
 	if err != nil {
 		return err
 	}
-
-	if err = model.DB.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		return err
 	}
-	log.Println("You connected to database. (DataBaseModel)")
+	Model.DB = db
+	log.Println("Database connected.")
 	return nil
 }
 
 // Get raw info from database
-func (model *DataBaseModel) GetQuery(query string) Data {
-	rows, err := model.DB.Query(query)
+func (this *DataBaseModel) GetQuery(query string) Data {
+	rows, err := this.DB.Query(query)
 	if err != nil {
 		return Data{OK: false}
 	}
@@ -61,19 +61,4 @@ func (model *DataBaseModel) GetQuery(query string) Data {
 		return Data{OK: false}
 	}
 	return res[0]
-}
-
-// Initialize database
-func Init() (*sql.DB, error) {
-	sql_url := os.Getenv("DATABASE_URL")
-	db, err := sql.Open("postgres", sql_url)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
-	log.Println("You connected to database.")
-	return db, nil
 }
