@@ -4,23 +4,13 @@ import (
 	"testing"
 )
 
-var (
-	newData   Data
-	validData Data = Data{
+func TestCreateCache(t *testing.T) {
+	validData := Data{
 		OK:         true,
 		ShortURL:   "ShortURL",
 		FullURL:    "https://www.FullURL.com/",
 		ViewsCount: 123,
 	}
-	invalidData Data = Data{
-		OK:         false,
-		ShortURL:   "ShortURL",
-		FullURL:    "https://www.FullURL.com/",
-		ViewsCount: 123,
-	}
-)
-
-func TestCreateCache(t *testing.T) {
 	err := Init()
 	expect(t, err, nil)
 
@@ -29,18 +19,18 @@ func TestCreateCache(t *testing.T) {
 }
 
 func TestGetCache(t *testing.T) {
+	validData := Data{
+		OK:         true,
+		ShortURL:   "ShortURL",
+		FullURL:    "https://www.FullURL.com/",
+		ViewsCount: 123,
+	}
 	err := Init()
 	expect(t, err, nil)
 
-	newData = CheckCache(validData.ShortURL, false)
+	newData := CheckCache(validData.ShortURL, NotViewed)
 	expect(t, newData.ShortURL, validData.ShortURL)
 
-	newData = CheckCache(validData.ShortURL, true)
+	newData = CheckCache(validData.ShortURL, IsViewed)
 	expect(t, newData.ViewsCount, validData.ViewsCount+1)
-}
-
-func expect(t *testing.T, varToTest interface{}, expected interface{}) {
-	if varToTest != expected {
-		t.Fatalf("Variable value is '%v', expected '%v'", varToTest, expected)
-	}
 }
