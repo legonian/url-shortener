@@ -24,11 +24,12 @@ var store = Storage{
 	mu:    &sync.RWMutex{},
 }
 
-const (
-	CACHE_DURATION = "30s"
-	CACHE_LIMIT    = 10
+var (
+	CACHE_DURATION_S, _ = time.ParseDuration("30s")
+	CACHE_LIMIT         = 10
 )
 
+// Check does varieble with Item type is expired
 func (item Item) isExpired() bool {
 	if item.Expiration == 0 {
 		return false
@@ -45,39 +46,32 @@ func CheckCache(key string, increment int) Data {
 		return Data{OK: false}
 	}
 
-	if 0 < increment {
-		store.items[key] = Item{
-			Content:    store.items[key].Content,
-			Counter:    store.items[key].Counter + increment,
-			Expiration: store.items[key].Expiration,
-		}
+	store.items[key] = Item{
+		Content:    store.items[key].Content,
+		Counter:    store.items[key].Counter + increment,
+		Expiration: time.Now().Add(CACHE_DURATION_S).UnixNano(),
 	}
 
 	item := store.items[key]
 	item.Content.ViewsCount += item.Counter
-	if item.isExpired() {
-		delete(store.items, key)
-		item.Content = GetData(item.Content.ShortURL, item.Counter)
-	}
-	log.Printf("-- Cache -get-    view_count += %v\n", increment)
+	log.Printf("-- CACHE GET %v    view_count += %v\n", key, increment)
 	return item.Content
 }
 
 // Save data to cache
-func AddCache(newData Data) error {
+func AddCache(newData Data) {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
-	if CACHE_LIMIT < len(store.items) {
+	if CACHE_LIMIT <= len(store.items) {
 		for key, item := range store.items {
 			if 0 < item.Counter {
 				GetData(item.Content.ShortURL, item.Counter)
 			}
 			delete(store.items, key)
+			log.Printf("-- CACHE DELETED %s", key)
 		}
-		log.Println("-- Cache -cleared-    all")
 	} else {
-		log.Print("-- Cache -refresh-")
 		for key, item := range store.items {
 			isHasViewToSave := 0 < item.Counter
 			expired := item.isExpired()
@@ -86,7 +80,7 @@ func AddCache(newData Data) error {
 				GetData(item.Content.ShortURL, item.Counter)
 			}
 			if expired {
-				log.Printf("-- Cache -expired-    %s with %vviews",
+				log.Printf("-- CACHE EXPIRED %s    with %vviews",
 					item.Content.ShortURL,
 					item.Counter)
 				delete(store.items, key)
@@ -94,14 +88,10 @@ func AddCache(newData Data) error {
 		}
 	}
 
-	duration, err := time.ParseDuration(CACHE_DURATION)
-	if err == nil {
-		store.items[newData.ShortURL] = Item{
-			Content:    newData,
-			Counter:    0,
-			Expiration: time.Now().Add(duration).UnixNano(),
-		}
-		log.Printf("-- Cache -set-    %s expired in %s\n", newData.ShortURL, CACHE_DURATION)
+	store.items[newData.ShortURL] = Item{
+		Content:    newData,
+		Counter:    0,
+		Expiration: time.Now().Add(CACHE_DURATION_S).UnixNano(),
 	}
-	return err
+	log.Printf("-- CACHE SET %s\n", newData.ShortURL)
 }

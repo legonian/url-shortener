@@ -24,19 +24,20 @@ type (
 	}
 )
 
-// Home Page
+// Open Index html page
 func Index(c echo.Context) error {
 	return c.File("public/index.html")
 	// to test on error:
 	// return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
 }
 
-// Info Page about URL
+// Open Info html page
 func Info(c echo.Context) error {
 	return c.File("public/info.html")
 }
 
-// Send url to database
+// Parse POST request, send given URL to database, after getting data with
+// shortcut code send it to client in json
 func SetRedirectJson(c echo.Context) error {
 	var u Url
 	if err := c.Bind(&u); err != nil {
@@ -47,11 +48,12 @@ func SetRedirectJson(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &Data{OK: false})
 	}
-	res := database.AddData(urlCode)
+	res := database.CreateData(urlCode)
 	return c.JSON(http.StatusCreated, res)
 }
 
-// Redirect to full URL
+// Parse GET request, and after getting data about given given shortcut
+// link from database(or cache) redirect client to full link
 func Redirect(c echo.Context) error {
 	urlCode := c.Param("short_url")
 	cacheData := database.CheckCache(urlCode, database.IsViewed)
@@ -62,14 +64,12 @@ func Redirect(c echo.Context) error {
 	if !res.OK {
 		return c.String(http.StatusNotFound, "Shortcut Not Found")
 	}
-	err := database.AddCache(res)
-	if err != nil {
-		return err
-	}
+	database.AddCache(res)
 	return c.Redirect(http.StatusFound, res.FullURL)
 }
 
-// Get json info about URL
+// Parse POST request, and after getting data about given given shortcut
+// link from database(or cache) send it to client in json
 func InfoJson(c echo.Context) error {
 	m := echo.Map{}
 	if err := c.Bind(&m); err != nil {
@@ -81,9 +81,9 @@ func InfoJson(c echo.Context) error {
 		return c.JSON(http.StatusOK, cacheData)
 	}
 	res := database.GetData(urlCode, database.NotViewed)
-	err := database.AddCache(res)
-	if err != nil {
-		return err
+	if !res.OK {
+		return c.String(http.StatusNotFound, "Shortcut Not Found")
 	}
+	database.AddCache(res)
 	return c.JSON(http.StatusOK, res)
 }

@@ -47,7 +47,7 @@ func TestInfoPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dataForTest := database.AddData(validURL)
+	dataForTest := database.CreateData(validURL)
 
 	e.GET("/:short_url/info", handler.Info)
 	e.POST("/:short_url/json", handler.InfoJson)
