@@ -38,7 +38,6 @@ func (item Item) isExpired() bool {
 
 // Get data from cache
 func CheckCache(key string, increment int) Data {
-	log.Printf("-- Cache getting... (increase view count by %v)\n", increment)
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
@@ -55,11 +54,12 @@ func CheckCache(key string, increment int) Data {
 	}
 
 	item := store.items[key]
+	item.Content.ViewsCount += item.Counter
 	if item.isExpired() {
 		delete(store.items, key)
 		item.Content = GetData(item.Content.ShortURL, item.Counter)
 	}
-	item.Content.ViewsCount += item.Counter
+	log.Printf("-- Cache -get-    view_count += %v\n", increment)
 	return item.Content
 }
 
@@ -69,16 +69,28 @@ func AddCache(newData Data) error {
 	defer store.mu.RUnlock()
 
 	if CACHE_LIMIT < len(store.items) {
-		store.items = make(map[string]Item)
-	}
-	for key, item := range store.items {
-		isHasViewToSave := 0 < item.Counter
-
-		if item.isExpired() && isHasViewToSave {
-			GetData(item.Content.ShortURL, item.Counter)
-		}
-		if item.isExpired() {
+		for key, item := range store.items {
+			if 0 < item.Counter {
+				GetData(item.Content.ShortURL, item.Counter)
+			}
 			delete(store.items, key)
+		}
+		log.Println("-- Cache -cleared-    all")
+	} else {
+		log.Print("-- Cache -refresh-")
+		for key, item := range store.items {
+			isHasViewToSave := 0 < item.Counter
+			expired := item.isExpired()
+
+			if expired && isHasViewToSave {
+				GetData(item.Content.ShortURL, item.Counter)
+			}
+			if expired {
+				log.Printf("-- Cache -expired-    %s with %vviews",
+					item.Content.ShortURL,
+					item.Counter)
+				delete(store.items, key)
+			}
 		}
 	}
 
@@ -89,7 +101,7 @@ func AddCache(newData Data) error {
 			Counter:    0,
 			Expiration: time.Now().Add(duration).UnixNano(),
 		}
-		log.Printf("-- Cache set (%s, expired in %s)\n", newData.ShortURL, CACHE_DURATION)
+		log.Printf("-- Cache -set-    %s expired in %s\n", newData.ShortURL, CACHE_DURATION)
 	}
 	return err
 }
