@@ -58,10 +58,6 @@ func GetData(shortUrl string, viewIncrease int) Data {
 	if err != nil && err != sql.ErrNoRows {
 		return Data{OK: false}
 	}
-	log.Println(data)
-	log.Println(data)
-	log.Println(data)
-	log.Println(data)
 	return data
 }
 
