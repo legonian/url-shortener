@@ -17,7 +17,7 @@ import (
 
 var (
 	dataToFillThroughTest         Data
-	validLinkToTest               string   = "https://www.google.com/"
+	validLinkToTest               string   = "https://www.example.com/"
 	invalidArrayOfLinkToTest      []string = []string{"qwerty"} // Full path Links
 	invalidArrayOfShortLinkToTest []string = []string{"qwerty"} // Shortcut Links
 )

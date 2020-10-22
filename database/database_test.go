@@ -5,7 +5,7 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
-	validURL := "https://www.FullURL.com/"
+	validURL := "https://www.example.com/"
 
 	err := Init()
 	expect(t, err, nil)

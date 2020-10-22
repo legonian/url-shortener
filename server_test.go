@@ -41,7 +41,7 @@ func TestIndexPage(t *testing.T) {
 }
 
 func TestInfoPage(t *testing.T) {
-	validURL := "https://www.google.com/"
+	validURL := "https://www.example.com/"
 	e, err := initEcho()
 	if err != nil {
 		t.Fatal(err)
