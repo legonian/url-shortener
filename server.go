@@ -37,29 +37,23 @@ func main() {
 
 	// Initialize app
 	e := echo.New()
-
-	// Middlewares
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "path:${uri} | ${method} method to ${status} | t=${latency_human}\n",
 	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.Secure())
 
-	// Static Files including HTML
+	// GET Routes
 	e.Static("/public", "public")
-
-	// Main Routes
 	e.GET("/", handler.Index)
 	e.GET("/:short_url", handler.Redirect)
 	e.GET("/:short_url/info", handler.Info)
 
-	// Called from Index Page javascript
+	// POSTs Routes to get JSON
 	e.POST("/create", handler.SetRedirectJson)
-	// Called from Info Page javascript
 	e.POST("/:short_url/json", handler.InfoJson)
 
 	actionOnInterrupt()
-
 	e.Logger.Fatal(e.Start(":" + port))
 }
 
