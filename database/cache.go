@@ -96,6 +96,7 @@ func AddCache(newData Data) {
 	log.Printf("-- CACHE SET %s\n", newData.ShortURL)
 }
 
+// Remove all cache items, but if item hold non zero value save it to database
 func ClearCache() {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
