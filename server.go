@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/legonian/url-shortener/database"
 	"github.com/legonian/url-shortener/handler"
@@ -57,5 +58,18 @@ func main() {
 	// Called from Info Page javascript
 	e.POST("/:short_url/json", handler.InfoJson)
 
+	actionOnInterrupt()
+
 	e.Logger.Fatal(e.Start(":" + port))
+}
+
+func actionOnInterrupt() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			database.ClearCache()
+			log.Fatal(sig)
+		}
+	}()
 }

@@ -95,3 +95,16 @@ func AddCache(newData Data) {
 	}
 	log.Printf("-- CACHE SET %s\n", newData.ShortURL)
 }
+
+func ClearCache() {
+	store.mu.RLock()
+	defer store.mu.RUnlock()
+
+	for key, item := range store.items {
+		if 0 < item.Counter {
+			GetData(item.Content.ShortURL, item.Counter)
+		}
+		delete(store.items, key)
+		log.Printf("-- CACHE DELETED %s", key)
+	}
+}
