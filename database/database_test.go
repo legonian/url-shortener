@@ -5,24 +5,21 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
+	validURL := "https://www.FullURL.com/"
+
 	err := Init()
 	expect(t, err, nil)
 
-	validData := Data{
-		OK:         true,
-		ShortURL:   "ShortURL",
-		FullURL:    "https://www.FullURL.com/",
-		ViewsCount: 123,
-	}
-
-	newData := AddData(validData.FullURL)
-	expect(t, newData.FullURL, validData.FullURL)
+	newData := CreateData(validURL)
+	expect(t, newData.OK, true)
+	expect(t, newData.FullURL, validURL)
+	expect(t, newData.ViewsCount, 0)
 
 	getData := GetData(newData.ShortURL, IsViewed)
 	expect(t, getData.OK, newData.OK)
 	expect(t, getData.ShortURL, newData.ShortURL)
 	expect(t, getData.FullURL, newData.FullURL)
-	expect(t, getData.ViewsCount, newData.ViewsCount+1)
+	expect(t, getData.ViewsCount, 1)
 }
 
 func expect(t *testing.T, varToTest interface{}, expected interface{}) {

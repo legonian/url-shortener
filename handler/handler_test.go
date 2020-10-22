@@ -27,8 +27,6 @@ func TestCreatingValidLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.POST("/create", SetRedirectJson)
-
 	test_json := fmt.Sprintf(`{"url": "%s"}`, validLinkToTest)
 	req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(test_json))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -53,8 +51,6 @@ func TestCreatingInvalidLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.POST("/create", SetRedirectJson)
-
 	for _, invalidLink := range invalidArrayOfLinkToTest {
 		test_json := fmt.Sprintf(`{"url": "%s"}`, invalidLink)
 		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(test_json))
@@ -78,8 +74,6 @@ func TestValidLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.GET("/:short_url", Redirect)
-
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -107,8 +101,6 @@ func TestInValidLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.GET("/:short_url", Redirect)
-
 	for _, invalidShortLink := range invalidArrayOfShortLinkToTest {
 		req := httptest.NewRequest(http.MethodGet, "/"+invalidShortLink, nil)
 		rec := httptest.NewRecorder()
