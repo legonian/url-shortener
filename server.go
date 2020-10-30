@@ -33,7 +33,7 @@ func init() {
 func main() {
 	app := SetupApp()
 	actionOnInterrupt()
-	log.Fatal(http.ListenAndServe(":3000", app))
+	log.Fatal(http.ListenAndServe(":"+port, app))
 }
 
 func SetupApp() chi.Router {
