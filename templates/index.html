@@ -1,0 +1,25 @@
+{{template "header.html" .}}
+
+<div class="container">
+  <div class="py-4 py-5 text-center">
+    <a href="/">
+      <h2>URL shortener</h2>
+    </a>
+
+    <p class="lead">To simplify just type your link</p>
+
+    <div class="input-group mb-3">
+      <input id="url_text" type="text" class="form-control" placeholder="Enter link">
+      <div class="input-group-append">
+        <button id="submit_url_button" class="btn btn-primary" type="button">Shorten</button>
+      </div>
+    </div>
+    <div id="error_message" class="alert alert-danger" role="alert" hidden>
+      This URL is invalid. Try to change it.
+    </div>
+    <p>Use this URL Shortener to create a shortened link making it easy to share.</p>
+  </div>
+</div>
+<script type="text/javascript" src="/public/js/index.js"></script>
+
+{{template "footer.html"}}

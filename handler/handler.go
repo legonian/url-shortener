@@ -2,88 +2,139 @@
 package handler
 
 import (
-	"fmt"
+	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
+	"text/template"
 
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi"
 	"github.com/legonian/url-shortener/database"
 )
 
 type (
-	// Data type that will be sent to client
-	Data struct {
-		OK         bool   `json:"ok"`
-		ShortURL   string `json:"short_url"`
-		FullURL    string `json:"full_url"`
-		ViewsCount int    `json:"views_count"`
-	}
 	// Data type that coming from client to create Data
 	Url struct {
 		Url string `json:"url"`
 	}
+	// Data represent page content
+	Page struct {
+		Title      string
+		Body       database.Data
+		StatusCode int
+		StatusText string
+	}
 )
 
+var templates = template.Must(template.ParseGlob("templates/*"))
+
 // Open Index html page
-func Index(c echo.Context) error {
-	return c.File("public/index.html")
-	// to test on error:
-	// return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
+func Index(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "index", Page{Title: "Home Page"})
 }
 
 // Open Info html page
-func Info(c echo.Context) error {
-	return c.File("public/info.html")
+func Info(w http.ResponseWriter, r *http.Request) {
+	shortcut := chi.URLParam(r, "shortcut")
+	cacheData := database.CheckCache(shortcut, database.NotViewed)
+	if cacheData.OK {
+		renderTemplate(w, "info", Page{
+			Title: "URL Info",
+			Body:  cacheData,
+		})
+		return
+	}
+	data := database.GetData(shortcut, database.NotViewed)
+	if !data.OK {
+		renderTemplate(w, "error", Page{
+			Title:      "Not found in database",
+			StatusCode: http.StatusNotFound,
+		})
+		return
+	}
+	database.AddCache(data)
+	renderTemplate(w, "info", Page{
+		Title: "URL Info",
+		Body:  data,
+	})
 }
 
 // Parse POST request, send given URL to database, after getting data with
 // shortcut code send it to client in json
-func SetRedirectJson(c echo.Context) error {
-	var u Url
-	if err := c.Bind(&u); err != nil {
-		return c.JSON(http.StatusBadRequest, &Data{OK: false})
-	}
-	urlCode := string(u.Url)
-	_, err := url.ParseRequestURI(urlCode)
+func SetRedirectJson(w http.ResponseWriter, r *http.Request) {
+	var postData Url
+	err := json.NewDecoder(r.Body).Decode(&postData)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, &Data{OK: false})
+		sendJson(w, database.Data{OK: false}, http.StatusBadRequest)
+		return
 	}
-	res := database.CreateData(urlCode)
-	return c.JSON(http.StatusCreated, res)
+	newUrl := string(postData.Url)
+	if !isValidUrl(newUrl) {
+		sendJson(w, database.Data{OK: false}, http.StatusBadRequest)
+		return
+	}
+	res := database.CreateData(newUrl)
+	sendJson(w, res, http.StatusCreated)
 }
 
 // Parse GET request, and after getting data about given given shortcut
 // link from database(or cache) redirect client to full link
-func Redirect(c echo.Context) error {
-	urlCode := c.Param("short_url")
-	cacheData := database.CheckCache(urlCode, database.IsViewed)
-	if cacheData.OK && cacheData.FullURL != "" {
-		return c.Redirect(http.StatusFound, cacheData.FullURL)
+func Redirect(w http.ResponseWriter, r *http.Request) {
+	shortcut := chi.URLParam(r, "shortcut")
+	cacheData := database.CheckCache(shortcut, database.IsViewed)
+	if cacheData.OK {
+		http.Redirect(w, r, cacheData.FullURL, http.StatusFound)
+		return
 	}
-	res := database.GetData(urlCode, database.IsViewed)
-	if !res.OK {
-		return c.String(http.StatusNotFound, "Shortcut Not Found")
+	data := database.GetData(shortcut, database.IsViewed)
+	if !data.OK {
+		renderTemplate(w, "error", Page{
+			Title:      "Not found in database",
+			StatusCode: http.StatusNotFound,
+		})
+		return
 	}
-	database.AddCache(res)
-	return c.Redirect(http.StatusFound, res.FullURL)
+	database.AddCache(data)
+	http.Redirect(w, r, data.FullURL, http.StatusFound)
 }
 
-// Parse POST request, and after getting data about given given shortcut
-// link from database(or cache) send it to client in json
-func InfoJson(c echo.Context) error {
-	m := echo.Map{}
-	if err := c.Bind(&m); err != nil {
-		return err
+// Check does given string is valid URL
+func isValidUrl(urlToCheck string) bool {
+	_, err := url.ParseRequestURI(urlToCheck)
+	if err != nil {
+		log.Printf("Bad URL: %s", urlToCheck)
+		return false
 	}
-	urlCode := fmt.Sprintf("%s", m["url"])
-	cacheData := database.CheckCache(urlCode, database.NotViewed)
-	if cacheData.OK {
-		return c.JSON(http.StatusOK, cacheData)
+	return true
+}
+
+// Wrap some actions to render template
+func renderTemplate(w http.ResponseWriter, tmpl string, p Page) {
+	if p.StatusCode == 0 {
+		p.StatusCode = http.StatusOK
 	}
-	res := database.GetData(urlCode, database.NotViewed)
-	if !res.OK {
-		return c.String(http.StatusNotFound, "Shortcut Not Found")
+	w.WriteHeader(p.StatusCode)
+	if p.StatusText == "" {
+		p.StatusText = http.StatusText(p.StatusCode)
 	}
-	database.AddCache(res)
-	return c.JSON(http.StatusOK, res)
+	if p.Title == "" {
+		p.Title = http.StatusText(p.StatusCode)
+	}
+	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// Send given data struck to writer as json respond
+func sendJson(w http.ResponseWriter, dataToSend database.Data, httpCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpCode)
+	err := json.NewEncoder(w).Encode(dataToSend)
+	if err != nil {
+		renderTemplate(w, "error", Page{
+			Title:      "json error",
+			StatusCode: http.StatusNotFound,
+		})
+	}
 }

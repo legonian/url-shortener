@@ -5,7 +5,7 @@ const errorMessage = document.getElementById('error_message')
 const showError = () => { errorMessage.hidden = false }
 const hideError = () => { errorMessage.hidden = true }
 
-async function sendToServer(urlText){
+async function sendToServer(urlText) {
   const formBody = JSON.stringify({
     url: urlText
   })
@@ -18,8 +18,8 @@ async function sendToServer(urlText){
 
   if (res.status === 201) {
     ans = await res.json()
-    
-    const protocol =  window.location.protocol
+
+    const protocol = window.location.protocol
     const hostname = window.location.hostname
     const port = window.location.port
     const url = `${protocol}//${hostname}:${port}/${ans.short_url}/info`
@@ -31,7 +31,7 @@ async function sendToServer(urlText){
 
 submitButton.onclick = function () { sendToServer(userInput.value) }
 
-userInput.addEventListener("keyup", function (event){
+userInput.addEventListener("keyup", function (event) {
   if (event.key === 'Enter') {
     submitButton.click()
   }
