@@ -7,13 +7,12 @@ number of click your short link has.
 ## Features
 
 This app include following features:
-+ Echo web framework for its speed, simple routing and standart middlewares
-+ Echo Secure Middleware to provide basic protection against typical attacs
-+ PostgreSQL for database to store shortcut
++ Using net/http with Chi-router
++ PostgreSQL for database to store shortcuts
 + In-memory cache with length and durations limit
 + Clicks counter
 + Separate database code, so its easy to change database implementations
-+ Test cover all functions and http status results of every routes checked
++ Tests to check different routes and functions
 
 ## Demo
 
