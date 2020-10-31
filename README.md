@@ -13,6 +13,7 @@ This app include following features:
 + Clicks counter
 + Separate database code, so its easy to change database implementations
 + Tests to check different routes and functions
++ Catch interaptions and SIGTERM signal to save cache before exiting
 
 ## Demo
 
