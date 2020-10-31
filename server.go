@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -33,7 +34,7 @@ func init() {
 
 func main() {
 	app := SetupApp()
-	actionOnInterrupt()
+	catchExit()
 	log.Fatal(http.ListenAndServe(":"+port, app))
 }
 
@@ -67,14 +68,14 @@ func SetupApp() chi.Router {
 // 	e.Use(middleware.Secure())
 // }
 
-func actionOnInterrupt() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+func catchExit() {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		for sig := range c {
-			database.ClearCache()
-			log.Fatal(sig)
-		}
+		<-sig
+		database.ClearCache()
+		fmt.Println("Cache saved before exit")
+		os.Exit(0)
 	}()
 }
 
