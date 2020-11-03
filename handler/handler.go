@@ -28,12 +28,13 @@ type (
 
 var templates = template.Must(template.ParseGlob("templates/*"))
 
-// Open Index html page
+// Send Index page
 func Index(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "index", Page{Title: "Home Page"})
 }
 
-// Open Info html page
+// Send Info page about given shortcut from database (or cache) to copy and
+// view clicks count of that shortcut
 func Info(w http.ResponseWriter, r *http.Request) {
 	shortcut := chi.URLParam(r, "shortcut")
 	cacheData := database.CheckCache(shortcut, database.NotViewed)
@@ -78,7 +79,7 @@ func SetRedirectJson(w http.ResponseWriter, r *http.Request) {
 }
 
 // Parse GET request, and after getting data about given given shortcut
-// link from database(or cache) redirect client to full link
+// link from database (or cache) redirect client to full link
 func Redirect(w http.ResponseWriter, r *http.Request) {
 	shortcut := chi.URLParam(r, "shortcut")
 	cacheData := database.CheckCache(shortcut, database.IsViewed)
@@ -108,7 +109,7 @@ func isValidUrl(urlToCheck string) bool {
 	return true
 }
 
-// Wrap some actions to render template
+// Send given template file or error page
 func renderTemplate(w http.ResponseWriter, tmpl string, p Page) {
 	if p.StatusCode == 0 {
 		p.StatusCode = http.StatusOK

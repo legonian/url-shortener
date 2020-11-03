@@ -38,14 +38,13 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, app))
 }
 
+// Initialize database and router
 func SetupApp() chi.Router {
-	// Initialize database
 	err := database.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Initialize Chi router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", handler.Index)
@@ -60,14 +59,7 @@ func SetupApp() chi.Router {
 	return r
 }
 
-// func main() {
-// 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-// 		Format: "path:${uri} | ${method} method to ${status} | t=${latency_human}\n",
-// 	}))
-// 	e.Use(middleware.Recover())
-// 	e.Use(middleware.Secure())
-// }
-
+// Handle exit signals from OS and do action to to prevent losing data
 func catchExit() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
