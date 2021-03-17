@@ -4,35 +4,52 @@ import (
 	"testing"
 )
 
-func TestCacheFunctions(t *testing.T) {
+func TestCache(t *testing.T) {
 	CACHE_LIMIT = 2
-	shortcuts := []string{"123", "456", "789"}
 	testData := Data{
 		OK:         true,
 		FullURL:    "https://www.example.com/",
 		ViewsCount: 1111,
 	}
-	err := Init()
-	expect(t, err, nil)
+	shortcuts := []string{"123", "456", "789"}
+
+	if err := Init(); err != nil {
+		t.Fatalf("error when initializing database: %s", err)
+	}
 
 	testData.ShortURL = shortcuts[0]
 	AddCache(testData)
 
 	cacheData := CheckCache(shortcuts[0], NotViewed)
-	expect(t, cacheData.ShortURL, testData.ShortURL)
+	if cacheData.ShortURL != testData.ShortURL {
+		t.Errorf("cached ShortURL = %v, expect %v",
+			cacheData.ShortURL, testData.ShortURL)
+	}
 
 	cacheData = CheckCache(shortcuts[0], IsViewed)
-	expect(t, cacheData.ViewsCount, testData.ViewsCount+1)
+	if cacheData.ViewsCount != testData.ViewsCount+1 {
+		t.Errorf("cache not increment views: ViewsCount = %v, expect %v",
+			cacheData.ViewsCount, testData.ViewsCount+1)
+	}
 
 	testData.ShortURL = shortcuts[1]
 	AddCache(testData)
+
 	testData.ShortURL = shortcuts[2]
 	AddCache(testData)
 
 	cacheData = CheckCache(shortcuts[0], IsViewed)
-	expect(t, cacheData.OK, false)
+	if cacheData.OK {
+		t.Errorf("first cached data not cleared then reach the limit")
+	}
+
 	cacheData = CheckCache(shortcuts[1], IsViewed)
-	expect(t, cacheData.OK, false)
+	if cacheData.OK {
+		t.Errorf("second cached data not cleared then reach the limit")
+	}
+
 	cacheData = CheckCache(shortcuts[2], IsViewed)
-	expect(t, cacheData.OK, true)
+	if cacheData.OK != true {
+		t.Errorf("third cached data not accessed from cache")
+	}
 }
