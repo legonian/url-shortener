@@ -26,7 +26,15 @@ type (
 	}
 )
 
-var templates = template.Must(template.ParseGlob("templates/*"))
+var templates *template.Template
+
+// Set path to parse with template.ParseGlob(). Call this function before
+// calling any other handler that use templates
+func SetTemplates(path string) error {
+	var err error
+	templates, err = template.ParseGlob(path)
+	return err
+}
 
 // Send Index page
 func Index(w http.ResponseWriter, r *http.Request) {

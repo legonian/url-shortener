@@ -40,8 +40,11 @@ func main() {
 
 // Initialize database and router
 func SetupApp() chi.Router {
-	err := database.Init()
-	if err != nil {
+	if err := database.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := handler.SetTemplates("templates/*"); err != nil {
 		log.Fatal(err)
 	}
 
