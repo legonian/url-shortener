@@ -52,4 +52,12 @@ func TestCache(t *testing.T) {
 	if cacheData.OK != true {
 		t.Errorf("third cached data not accessed from cache")
 	}
+
+	ClearCache()
+
+	cacheData = CheckCache(shortcuts[2], IsViewed)
+	if cacheData.OK != false {
+		t.Errorf("third cached data not cleared after ClearCache() data = %v",
+			cacheData)
+	}
 }
