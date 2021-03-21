@@ -1,5 +1,5 @@
-// Package main provides Echo framework initialization and set handlers to
-// their path
+// +heroku goVersion go1.16
+
 package main
 
 import (
