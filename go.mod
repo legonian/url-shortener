@@ -1,3 +1,5 @@
+// +heroku goVersion go1.16
+
 module github.com/legonian/url-shortener
 
 go 1.14
