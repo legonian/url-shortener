@@ -19,7 +19,7 @@ This app include following features:
 
 Demo app example is running in Heroku Cloud (free dynos):
 
-https://rocky-bayou-89648.herokuapp.com/
+https://tiny-shortener.herokuapp.com/
 
 <img align="left" width="400" alt="Index Page" src="https://github.com/legonian/url-shortener/raw/master/public/img/example1.png">
 <img width="400" alt="Info Page" src="https://github.com/legonian/url-shortener/raw/master/public/img/example2.png">
