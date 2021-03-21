@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -33,13 +34,21 @@ func init() {
 }
 
 func main() {
-	app := SetupApp()
+	app := setupApp()
 	catchExit()
-	log.Fatal(http.ListenAndServe(":"+port, app))
+	srv := &http.Server{
+		Addr:           ":" + port,
+		Handler:        app,
+		ReadTimeout:    5 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		IdleTimeout:    60 * time.Second,
+		MaxHeaderBytes: 1 << 18,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
 
 // Initialize database and router
-func SetupApp() chi.Router {
+func setupApp() chi.Router {
 	if err := database.Init(); err != nil {
 		log.Fatal(err)
 	}
@@ -58,7 +67,7 @@ func SetupApp() chi.Router {
 
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "public"))
-	FileServer(r, "/public", filesDir)
+	fileServer(r, "/public", filesDir)
 	return r
 }
 
@@ -74,11 +83,11 @@ func catchExit() {
 	}()
 }
 
-// FileServer conveniently sets up a http.FileServer handler to serve
+// fileServer conveniently sets up a http.fileServer handler to serve
 // static files from a http.FileSystem.
-func FileServer(r chi.Router, path string, root http.FileSystem) {
+func fileServer(r chi.Router, path string, root http.FileSystem) {
 	if strings.ContainsAny(path, "{}*") {
-		panic("FileServer does not permit any URL parameters.")
+		panic("fileServer does not permit any URL parameters.")
 	}
 
 	if path != "/" && path[len(path)-1] != '/' {
